@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
+
+    <!-- Создание таблицы ролей -->
+    <changeSet id="1" author="l1zail">
+        <createTable tableName="roles">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(50)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <!-- Создание таблицы административных пользователей -->
+    <changeSet id="2" author="l1zail">
+        <createTable tableName="admin_users">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="username" type="VARCHAR(255)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="email" type="VARCHAR(255)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="password_hash" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <!-- Создание таблицы связи между административными пользователями и ролями -->
+    <changeSet id="3" author="l1zail">
+        <createTable tableName="admin_user_roles">
+            <column name="admin_user_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="role_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <addForeignKeyConstraint
+                baseTableName="admin_user_roles" baseColumnNames="admin_user_id"
+                referencedTableName="admin_users" referencedColumnNames="id"
+                onDelete="CASCADE"
+                constraintName="fk_admin_user_roles_admin_user_id"/>
+        <addForeignKeyConstraint
+                baseTableName="admin_user_roles" baseColumnNames="role_id"
+                referencedTableName="roles" referencedColumnNames="id"
+                onDelete="CASCADE"
+                constraintName="fk_admin_user_roles_role_id"/>
+        <addUniqueConstraint columnNames="admin_user_id, role_id" tableName="admin_user_roles"
+                             constraintName="uk_admin_user_roles"/>
+    </changeSet>
+
+    <!-- Создание таблицы сегментов -->
+    <changeSet id="4" author="l1zail">
+        <createTable tableName="segments">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(255)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="description" type="VARCHAR(500)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_by" type="BIGINT">
+                <constraints nullable="true"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <addForeignKeyConstraint
+                baseTableName="segments" baseColumnNames="created_by"
+                referencedTableName="admin_users" referencedColumnNames="id"
+                onDelete="RESTRICT"
+                constraintName="fk_segments_created_by_admin"/>
+    </changeSet>
+
+    <changeSet id="5" author="l1zail">
+        <createTable tableName="users">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="login" type="VARCHAR(255)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="email" type="VARCHAR(255)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="ip_address" type="INET"/>
+            <column name="created_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <!-- Создание таблицы связи между пользователями и сегментами -->
+    <changeSet id="6" author="l1zail">
+        <createTable tableName="user_segments">
+            <column name="user_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="segment_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="added_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false" />
+            </column>
+        </createTable>
+        <addForeignKeyConstraint
+                baseTableName="user_segments" baseColumnNames="user_id"
+                referencedTableName="users" referencedColumnNames="id"
+                onDelete="CASCADE"
+                constraintName="fk_user_segments_user_id"/>
+        <addForeignKeyConstraint
+                baseTableName="user_segments" baseColumnNames="segment_id"
+                referencedTableName="segments" referencedColumnNames="id"
+                onDelete="CASCADE"
+                constraintName="fk_user_segments_segment_id"/>
+        <addUniqueConstraint columnNames="user_id, segment_id" tableName="user_segments"
+                             constraintName="uk_user_segments_user_id_segment_id"/>
+    </changeSet>
+
+    <!-- Создание таблицы фильтров -->
+    <changeSet id="7" author="l1zail">
+        <createTable tableName="filters">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="segment_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="filter_expression" type="TEXT"/>
+            <column name="user_percentage" type="DECIMAL(5,2)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <addForeignKeyConstraint
+                baseTableName="filters" baseColumnNames="segment_id"
+                referencedTableName="segments" referencedColumnNames="id"
+                onDelete="CASCADE"
+                constraintName="fk_filters_segment_id"/>
+    </changeSet>
+</databaseChangeLog>
