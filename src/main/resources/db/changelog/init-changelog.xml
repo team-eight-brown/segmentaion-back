@@ -152,10 +152,11 @@
                 <constraints nullable="false"/>
             </column>
             <column name="filter_expression" type="TEXT"/>
-            <column name="user_percentage" type="DECIMAL(5,2)">
+            <column name="user_percentage" type="DECIMAL(5,2)"/>
+            <column name="created_at" type="TIMESTAMP">
                 <constraints nullable="false"/>
             </column>
-            <column name="created_at" type="TIMESTAMP">
+            <column name="filter_type" type="VARCHAR(255)">
                 <constraints nullable="false"/>
             </column>
         </createTable>
