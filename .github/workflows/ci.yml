@@ -60,7 +60,7 @@ jobs:
 
       - name: Tag Docker image as latest
         run: |
-          docker tag l1zail/segmentation:${{ env.COMMIT_HASH }} l1zail/java-lab2:latest
+          docker tag l1zail/segmentation:${{ env.COMMIT_HASH }} l1zail/segmentation:latest
 
       - name: Push Docker image as latest
         run: |
