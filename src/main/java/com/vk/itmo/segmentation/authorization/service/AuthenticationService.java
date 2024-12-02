@@ -28,7 +28,7 @@ public class AuthenticationService {
     @Nonnull
     public String register(@Nonnull RegistrationRequest request) {
         var user = AdminUser.builder()
-                .username(request.getUserName())
+                .username(request.getUsername())
                 .email(request.getEmail())
                 .passwordHash(passwordEncoder.encode(request.getPassword()))
                 .build();
