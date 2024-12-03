@@ -1,4 +1,4 @@
-name: CI
+name: Deploy buy runner
 
 on:
   push:
@@ -35,7 +35,7 @@ jobs:
   docker:
     runs-on: ubuntu-latest
     needs: build
-    if: github.ref == 'refs/heads/main'
+#    if: github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@v4
 
@@ -65,4 +65,22 @@ jobs:
 
       - name: Push Docker image as latest
         run: |
-          docker push l1zail/segmentation:latest
+          docker push l1zail/segmentation:latest     
+
+  prepare-environment:
+    runs-on: self-hosted
+    needs: docker
+    steps:
+      - name: Stop and remove containers, networks
+        run: sudo docker-compose down
+      - name: Remove unused data
+        run: sudo docker system prune -a -f
+
+  deploy:
+    runs-on: self-hosted
+    needs: prepare-environment
+    steps:
+      - name: checkout repo
+        uses: actions/checkout@v3
+      - name: docker-compose
+        run: sudo docker-compose up -d
