@@ -49,20 +49,20 @@ public class SegmentController {
     @PutMapping("/{id}")
     @Operation(summary = "Обновить сегмент", description = "Обновляет данные сегмента")
     public ResponseEntity<SegmentResponse> updateSegment(@PathVariable Long id,
-                                         @RequestBody @Valid SegmentUpdateRequest request) {
+                                                         @RequestBody @Valid SegmentUpdateRequest request) {
         return ResponseEntity.ok(segmentService.updateSegment(id, request));
     }
 
     @PostMapping("/{segmentId}/users")
     @Operation(summary = "Добавить пользователя в сегмент", description = "Добавляет пользователя в указанный сегмент.")
     public void addUserToSegment(@PathVariable Long segmentId, @RequestBody @Valid UsersToSegmentRequest dto) {
-        segmentService.addUserToSegment(dto);
+        segmentService.addUserToSegment(dto, segmentId);
     }
 
     @DeleteMapping("/{segmentId}/users")
     @Operation(summary = "Удалить пользователя из сегмента", description = "Удаляет пользователя из указанного сегмента.")
     public void removeUserFromSegment(@PathVariable Long segmentId, @RequestBody @Valid UsersToSegmentRequest dto) {
-        segmentService.removeUserFromSegment(dto);
+        segmentService.removeUserFromSegment(dto, segmentId);
     }
 
     @GetMapping("/users/{userId}")
