@@ -62,9 +62,9 @@ public class SegmentService {
     }
 
     // Добавление пользователя в сегмент
-    public void addUserToSegment(UsersToSegmentRequest request) {
+    public void addUserToSegment(UsersToSegmentRequest request, Long segmentId) {
         var user = userService.findById(request.userId());
-        var segment = findById(request.segmentId());
+        var segment = findById(segmentId);
         if (user.getSegments().contains(segment)) {
             throw new IllegalStateException("User is already in the segment.");
         }
@@ -75,9 +75,9 @@ public class SegmentService {
 
     // Удаление пользователя из сегмента
     @Transactional
-    public void removeUserFromSegment(UsersToSegmentRequest request) {
+    public void removeUserFromSegment(UsersToSegmentRequest request, Long segmentId) {
         var user = userService.findById(request.userId());
-        var segment = findById(request.segmentId());
+        var segment = findById(segmentId);
         if (!user.getSegments().contains(segment)) {
             throw new IllegalStateException("User is not part of the segment.");
         }
