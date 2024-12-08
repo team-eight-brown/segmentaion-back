@@ -58,7 +58,11 @@ public class SecurityConfiguration {
         http.cors().and().csrf()
                 .disable()
                 .authorizeHttpRequests()
-                .requestMatchers("/api/v1/auth/register", "/api/v1/auth/login")
+                .requestMatchers("/api/v1/auth/register", "/api/v1/auth/login",
+                        "/swagger-ui/**",
+                        "/v3/api-docs/**",
+                        "/swagger-ui.html",
+                        "/webjars/**")
                 .permitAll()
                 .anyRequest()
                 .authenticated()
