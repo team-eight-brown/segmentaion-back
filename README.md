@@ -29,4 +29,4 @@
 
 После успешного запуска проекта документация API будет доступна в Swagger UI по адресу:
 
-[http://localhost:8090/swagger-ui/index.html#/](http://localhost:8080/swagger-ui/index.html#/)
+[http://localhost:8090/swagger-ui/index.html#/](http://localhost:8090/swagger-ui/index.html#/)
