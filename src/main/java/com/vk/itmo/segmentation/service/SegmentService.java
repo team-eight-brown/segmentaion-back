@@ -69,8 +69,7 @@ public class SegmentService {
             throw new IllegalStateException("User is already in the segment.");
         }
         user.getSegments().add(segment);
-        segment.getUsers().add(user);
-        segmentRepository.save(segment);
+        userService.save(user);
     }
 
     // Удаление пользователя из сегмента
