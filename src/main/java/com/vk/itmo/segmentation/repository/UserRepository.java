@@ -16,4 +16,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     @Query(value = "SELECT * FROM users WHERE ip_address ~ :pattern", nativeQuery = true)
     List<User> findByIpPattern(@Param("pattern") String pattern);
+
+    long count();
 }

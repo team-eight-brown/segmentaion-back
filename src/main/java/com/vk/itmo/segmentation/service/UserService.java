@@ -7,8 +7,12 @@ import com.vk.itmo.segmentation.repository.AdminUserRepository;
 import com.vk.itmo.segmentation.repository.UserRepository;
 import jakarta.annotation.Nonnull;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 
 @Service
@@ -64,5 +68,17 @@ public class UserService {
     @Nonnull
     public User save(@Nonnull User userEntity) {
         return userRepository.save(userEntity);
+    }
+
+    public List<User> findAll(PageRequest pageRequest) {
+        return userRepository.findAll(pageRequest).getContent();
+    }
+
+    public List<User> saveAll(List<User> users) {
+        return userRepository.saveAll(users);
+    }
+
+    public long count() {
+        return userRepository.count();
     }
 }
