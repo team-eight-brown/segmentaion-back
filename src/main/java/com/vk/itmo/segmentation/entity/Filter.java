@@ -11,11 +11,16 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.Instant;
 
 @Entity
+@Getter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @Table(name = "filters")
 public class Filter {
     @Id
@@ -39,5 +44,5 @@ public class Filter {
     @Enumerated(EnumType.STRING)
     @Column(name = "filter_type", nullable = false)
     private FilterType filterType;
-
 }
+
