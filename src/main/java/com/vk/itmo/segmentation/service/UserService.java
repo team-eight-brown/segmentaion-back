@@ -47,12 +47,22 @@ public class UserService {
     }
 
     /**
-     * Сохранение пользователя
+     * Сохранение пользователя админа
      *
      * @return сохраненный пользователь
      */
     @Nonnull
     public AdminUser save(@Nonnull AdminUser userEntity) {
         return adminUserRepository.save(userEntity);
+    }
+
+    /**
+     * Сохранение пользователя
+     *
+     * @return сохраненный пользователь
+     */
+    @Nonnull
+    public User save(@Nonnull User userEntity) {
+        return userRepository.save(userEntity);
     }
 }
