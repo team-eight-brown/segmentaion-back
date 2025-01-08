@@ -1,6 +1,10 @@
 package com.vk.itmo.segmentation.service;
 
-import com.vk.itmo.segmentation.dto.*;
+import com.vk.itmo.segmentation.dto.DistributionRequest;
+import com.vk.itmo.segmentation.dto.SegmentCreateRequest;
+import com.vk.itmo.segmentation.dto.SegmentResponse;
+import com.vk.itmo.segmentation.dto.SegmentUpdateRequest;
+import com.vk.itmo.segmentation.dto.UsersToSegmentRequest;
 import com.vk.itmo.segmentation.entity.Segment;
 import com.vk.itmo.segmentation.entity.User;
 import com.vk.itmo.segmentation.exception.NotFoundException;
@@ -15,6 +19,10 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Service
 @RequiredArgsConstructor
@@ -22,7 +30,8 @@ public class SegmentService {
 
     private final SegmentRepository segmentRepository;
     private final UserService userService;
-    private static int USER_BATCH_SIZE = 100;
+    private static final int USER_BATCH_SIZE = 100;
+    private final ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 
     public Segment findById(Long segmentId) {
         return segmentRepository.findById(segmentId)
@@ -109,37 +118,78 @@ public class SegmentService {
     @Transactional
     public void randomDistributeUsersIntoSegments(DistributionRequest distributionRequest) {
         double percentage = distributionRequest.percentage();
+
         List<Segment> segments = segmentRepository.findAll();
         if (segments.isEmpty()) {
             return;
         }
-        double fraction = percentage / 100;
+
         long totalUsers = userService.count();
         if (totalUsers == 0) {
             return;
         }
-        int usersToDistribute = (int) (totalUsers * fraction);
-        int userPageNumber = 0;
-        List<User> users;
-        do {
-            users = userService.findAll(PageRequest.of(userPageNumber, USER_BATCH_SIZE));
-            if (users.isEmpty()) {
-                break;
+
+        int usersToDistribute = (int) (totalUsers * (percentage / 100));
+        if (usersToDistribute <= 0) {
+            return;
+        }
+
+        AtomicInteger toDistribute = new AtomicInteger(usersToDistribute);
+
+        int totalPages = (int) Math.ceil((double) totalUsers / USER_BATCH_SIZE);
+
+        List<Callable<Void>> tasks = new ArrayList<>();
+        for (int pageNumber = 0; pageNumber < totalPages; pageNumber++) {
+            int currentPage = pageNumber;
+           tasks.add(() -> {
+               distributeOnePage(currentPage, toDistribute, segments);
+               return null;
+           });
+        }
+        try {
+            executor.invokeAll(tasks);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Распределяем пользователей из одной страницы.
+     */
+    @Transactional(Transactional.TxType.REQUIRES_NEW)
+    public void distributeOnePage(int pageNumber,
+                                  AtomicInteger toDistribute,
+                                  List<Segment> segments) {
+        if (toDistribute.get() <= 0) {
+            return;
+        }
+
+        List<User> users = userService.findAll(PageRequest.of(pageNumber, USER_BATCH_SIZE));
+        if (users.isEmpty()) {
+            return;
+        }
+
+        Collections.shuffle(users);
+
+        int currentLimit = toDistribute.get();
+        if (currentLimit <= 0) {
+            return;
+        }
+
+        int toAssign = Math.min(currentLimit, users.size());
+
+        List<User> usersForDistribution = users.subList(0, toAssign);
+
+        for (int i = 0; i < usersForDistribution.size(); i++) {
+            User user = usersForDistribution.get(i);
+            Segment segment = segments.get(i % segments.size());
+            if (!user.getSegments().contains(segment)) {
+                user.getSegments().add(segment);
+                segment.getUsers().add(user);
             }
-            List<User> modifiableUsers = new ArrayList<>(users);
-            Collections.shuffle(modifiableUsers);
-            List<User> usersForDistribution = users.subList(0, Math.min(users.size(), usersToDistribute));
-            for (int i = 0; i < usersForDistribution.size(); i++) {
-                User user = usersForDistribution.get(i);
-                Segment segment = segments.get(i % segments.size());
-                if (!user.getSegments().contains(segment)) {
-                    user.getSegments().add(segment);
-                    segment.getUsers().add(user);
-                }
-            }
-            userService.saveAll(usersForDistribution);
-            usersToDistribute -= usersForDistribution.size();
-            userPageNumber++;
-        } while (usersToDistribute > 0);
+        }
+        userService.saveAll(usersForDistribution);
+
+        toDistribute.addAndGet(-toAssign);
     }
 }
