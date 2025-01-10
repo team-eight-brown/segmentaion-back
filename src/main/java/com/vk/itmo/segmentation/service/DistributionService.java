@@ -14,9 +14,15 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
-import static com.vk.itmo.segmentation.entity.enums.FilterType.*;
+import static com.vk.itmo.segmentation.entity.enums.FilterType.EMAIL_REGEXP;
+import static com.vk.itmo.segmentation.entity.enums.FilterType.IP_REGEXP;
+import static com.vk.itmo.segmentation.entity.enums.FilterType.LOGIN_REGEXP;
 
 @Service
 @RequiredArgsConstructor
@@ -26,6 +32,7 @@ public class DistributionService {
     private final SegmentService segmentService;
     private final SegmentRepository segmentRepository;
     private final FilterRepository filterRepository;
+    private final ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 
     public void distributeByFilter(@NonNull FilterDistributeRequest request) {
         var segment = segmentRepository.findById(request.segmentId()).orElseThrow();
@@ -43,10 +50,18 @@ public class DistributionService {
             case IP_REGEXP -> userRepository.findByIpPattern(request.regexp());
         };
         log.info("Distribute segments: {}", users);
-        users.forEach(
-                user -> segmentService
-                        .addUserToSegment(new UsersToSegmentRequest(user.getId()), savedFilter.getSegment().getId())
-        );
+
+        List<Callable<Void>> tasks = new ArrayList<>();
+
+        users.forEach(user -> tasks.add(() -> {
+            segmentService.addUserToSegment(new UsersToSegmentRequest(user.getId()), savedFilter.getSegment().getId());
+            return null;
+        }));
+        try {
+            executorService.invokeAll(tasks);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private FilterType getFilterType(FilterDistributeType type) {
