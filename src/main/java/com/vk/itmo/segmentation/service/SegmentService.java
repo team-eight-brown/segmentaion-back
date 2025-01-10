@@ -10,6 +10,7 @@ import com.vk.itmo.segmentation.entity.User;
 import com.vk.itmo.segmentation.exception.NotFoundException;
 import com.vk.itmo.segmentation.repository.SegmentRepository;
 import jakarta.transaction.Transactional;
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -119,11 +120,6 @@ public class SegmentService {
     public void randomDistributeUsersIntoSegments(DistributionRequest distributionRequest) {
         double percentage = distributionRequest.percentage();
 
-        List<Segment> segments = segmentRepository.findAll();
-        if (segments.isEmpty()) {
-            return;
-        }
-
         long totalUsers = userService.count();
         if (totalUsers == 0) {
             return;
@@ -136,13 +132,14 @@ public class SegmentService {
 
         AtomicInteger toDistribute = new AtomicInteger(usersToDistribute);
 
-        int totalPages = (int) Math.ceil((double) totalUsers / USER_BATCH_SIZE);
+        var segment = getSegmentByName(distributionRequest.segment());
 
+        int totalPages = (int) Math.ceil((double) totalUsers / USER_BATCH_SIZE);
         List<Callable<Void>> tasks = new ArrayList<>();
         for (int pageNumber = 0; pageNumber < totalPages; pageNumber++) {
             int currentPage = pageNumber;
            tasks.add(() -> {
-               distributeOnePage(currentPage, toDistribute, segments);
+               distributeOnePage(currentPage, toDistribute, segment);
                return null;
            });
         }
@@ -159,7 +156,7 @@ public class SegmentService {
     @Transactional(Transactional.TxType.REQUIRES_NEW)
     public void distributeOnePage(int pageNumber,
                                   AtomicInteger toDistribute,
-                                  List<Segment> segments) {
+                                  Segment segment) {
         if (toDistribute.get() <= 0) {
             return;
         }
@@ -182,7 +179,6 @@ public class SegmentService {
 
         for (int i = 0; i < usersForDistribution.size(); i++) {
             User user = usersForDistribution.get(i);
-            Segment segment = segments.get(i % segments.size());
             if (!user.getSegments().contains(segment)) {
                 user.getSegments().add(segment);
                 segment.getUsers().add(user);
@@ -191,5 +187,11 @@ public class SegmentService {
         userService.saveAll(usersForDistribution);
 
         toDistribute.addAndGet(-toAssign);
+    }
+
+    @NonNull
+    private Segment getSegmentByName(@NonNull String name) {
+        return segmentRepository.findByName(name)
+                .orElseThrow(() -> new IllegalArgumentException("Distributed segment are not exists"));
     }
 }
