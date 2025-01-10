@@ -53,12 +53,10 @@ public class DistributionService {
 
         List<Callable<Void>> tasks = new ArrayList<>();
 
-        users.forEach(user -> tasks.add(
-                () -> {
-                    segmentService.addUserToSegment(new UsersToSegmentRequest(user.getId()), savedFilter.getSegment().getId());
-                    return null;
-                })
-        );
+        users.forEach(user -> tasks.add(() -> {
+            segmentService.addUserToSegment(new UsersToSegmentRequest(user.getId()), savedFilter.getSegment().getId());
+            return null;
+        }));
         try {
             executorService.invokeAll(tasks);
         } catch (InterruptedException e) {

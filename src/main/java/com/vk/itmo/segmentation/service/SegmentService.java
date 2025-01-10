@@ -36,7 +36,7 @@ public class SegmentService {
 
     public Segment findById(Long segmentId) {
         return segmentRepository.findById(segmentId)
-                .orElseThrow(() -> new NotFoundException("Not found segmentName with id: " + segmentId));
+                .orElseThrow(() -> new NotFoundException("Not found segment with id: " + segmentId));
     }
 
     // Создание сегмента
@@ -78,7 +78,7 @@ public class SegmentService {
         var user = userService.findById(request.userId());
         var segment = findById(segmentId);
         if (user.getSegments().contains(segment)) {
-            throw new IllegalStateException("User is already in the segmentName.");
+            throw new IllegalStateException("User is already in the segment.");
         }
         user.getSegments().add(segment);
         userService.save(user);
@@ -90,7 +90,7 @@ public class SegmentService {
         var user = userService.findById(request.userId());
         var segment = findById(segmentId);
         if (!user.getSegments().contains(segment)) {
-            throw new IllegalStateException("User is not part of the segmentName.");
+            throw new IllegalStateException("User is not part of the segment.");
         }
         user.getSegments().remove(segment);
         segment.getUsers().remove(user);
@@ -192,6 +192,6 @@ public class SegmentService {
     @NonNull
     private Segment getSegmentByName(@NonNull String name) {
         return segmentRepository.findByName(name)
-                .orElseThrow(() -> new IllegalArgumentException("Distributed segmentName are not exists"));
+                .orElseThrow(() -> new IllegalArgumentException("Distributed segment are not exists"));
     }
 }
