@@ -36,7 +36,7 @@ public class SegmentService {
 
     public Segment findById(Long segmentId) {
         return segmentRepository.findById(segmentId)
-                .orElseThrow(() -> new NotFoundException("Not found segment with id: " + segmentId));
+                .orElseThrow(() -> new NotFoundException("Not found segmentName with id: " + segmentId));
     }
 
     // Создание сегмента
@@ -78,7 +78,7 @@ public class SegmentService {
         var user = userService.findById(request.userId());
         var segment = findById(segmentId);
         if (user.getSegments().contains(segment)) {
-            throw new IllegalStateException("User is already in the segment.");
+            throw new IllegalStateException("User is already in the segmentName.");
         }
         user.getSegments().add(segment);
         userService.save(user);
@@ -90,7 +90,7 @@ public class SegmentService {
         var user = userService.findById(request.userId());
         var segment = findById(segmentId);
         if (!user.getSegments().contains(segment)) {
-            throw new IllegalStateException("User is not part of the segment.");
+            throw new IllegalStateException("User is not part of the segmentName.");
         }
         user.getSegments().remove(segment);
         segment.getUsers().remove(user);
@@ -132,7 +132,7 @@ public class SegmentService {
 
         AtomicInteger toDistribute = new AtomicInteger(usersToDistribute);
 
-        var segment = getSegmentByName(distributionRequest.segment());
+        var segment = getSegmentByName(distributionRequest.segmentName());
 
         int totalPages = (int) Math.ceil((double) totalUsers / USER_BATCH_SIZE);
         List<Callable<Void>> tasks = new ArrayList<>();
@@ -192,6 +192,6 @@ public class SegmentService {
     @NonNull
     private Segment getSegmentByName(@NonNull String name) {
         return segmentRepository.findByName(name)
-                .orElseThrow(() -> new IllegalArgumentException("Distributed segment are not exists"));
+                .orElseThrow(() -> new IllegalArgumentException("Distributed segmentName are not exists"));
     }
 }

@@ -6,5 +6,5 @@ import jakarta.validation.constraints.NotEmpty;
 import lombok.NonNull;
 
 public record DistributionRequest(@Min(0) @Max(100) double percentage,
-                                  @NonNull @NotEmpty String segment) {
+                                  @NonNull @NotEmpty String segmentName) {
 }
