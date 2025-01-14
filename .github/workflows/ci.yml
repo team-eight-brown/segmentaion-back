@@ -75,9 +75,11 @@ jobs:
       - name: Remove existing Docker image
         run: |
           docker rmi -f l1zail/segmentation:latest || true
+          docker rmi -f l1zail/segmentation-front:latest || true
       - name: Pull latest Docker image
         run: |
           docker pull l1zail/segmentation:latest
+          docker pull l1zail/segmentation-front:latest
 
   deploy:
     runs-on: self-hosted
