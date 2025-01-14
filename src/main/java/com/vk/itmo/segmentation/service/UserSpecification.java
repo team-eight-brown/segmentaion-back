@@ -21,7 +21,7 @@ public class UserSpecification {
     public static Specification<User> hasId(Integer id) {
         return (root, query, criteriaBuilder) ->
                 id == null ? null : criteriaBuilder.equal(
-                        criteriaBuilder.lower(root.get("id")), id
+                        root.get("id"), id
                 );
     }
 }

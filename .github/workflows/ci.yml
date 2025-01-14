@@ -69,7 +69,7 @@ jobs:
     needs: docker
     steps:
       - name: Stop and remove containers, networks
-        run: sudo docker-compose down
+        run: sudo docker-compose down app front
       - name: Remove unused data
         run: sudo docker system prune -a -f
       - name: Remove existing Docker image
