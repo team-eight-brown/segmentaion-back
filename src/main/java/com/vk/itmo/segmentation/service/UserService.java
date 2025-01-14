@@ -89,6 +89,15 @@ public class UserService {
         return userRepository.findAll(spec, pageable).map(UserService::mapToUserResponse);
     }
 
+    public Page<UserResponse> getAllUsersOfSegment(String segmentName, Pageable pageable) {
+        if (segmentName == null) {
+            return Page.empty(pageable);
+        }
+
+        Page<User> users = userRepository.findAllBySegmentName(segmentName, pageable);
+        return users.map(UserService::mapToUserResponse);
+    }
+
     @Nonnull
     private static UserResponse mapToUserResponse(@Nonnull User user) {
         return new UserResponse(

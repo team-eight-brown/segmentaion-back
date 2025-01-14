@@ -1,6 +1,8 @@
 package com.vk.itmo.segmentation.repository;
 
 import com.vk.itmo.segmentation.entity.User;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
@@ -17,6 +19,9 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
 
     @Query(value = "SELECT * FROM users WHERE ip_address ~ :pattern", nativeQuery = true)
     List<User> findByIpPattern(@Param("pattern") String pattern);
+
+    @Query("SELECT u FROM User u JOIN u.segments s WHERE s.name = :segmentName")
+    Page<User> findAllBySegmentName(@Param("segmentName") String segmentName, Pageable pageable);
 
     long count();
 }

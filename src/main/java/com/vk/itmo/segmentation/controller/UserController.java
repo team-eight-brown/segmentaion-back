@@ -30,4 +30,12 @@ public class UserController {
             Pageable pageable) {
         return userService.getAllUsers(id, login, email, pageable);
     }
+
+    @GetMapping("/get-all-by-segment")
+    @Operation(summary = "Получить всех пользователей сегмента", description = "Возвращает список всех пользователей сегмента.")
+    public Page<UserResponse> getAllUsersOfSegment(
+            @RequestParam(name = "segment-name", required = true) String segmentName,
+            Pageable pageable) {
+        return userService.getAllUsersOfSegment(segmentName, pageable);
+    }
 }
