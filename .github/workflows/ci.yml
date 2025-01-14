@@ -69,17 +69,15 @@ jobs:
     needs: docker
     steps:
       - name: Stop and remove containers, networks
-        run: sudo docker-compose down
+        run: sudo docker-compose down app
       - name: Remove unused data
         run: sudo docker system prune -a -f
       - name: Remove existing Docker image
         run: |
           docker rmi -f l1zail/segmentation:latest || true
-          docker rmi -f l1zail/segmentation-front:latest || true
       - name: Pull latest Docker image
         run: |
           docker pull l1zail/segmentation:latest
-          docker pull l1zail/segmentation-front:latest
 
   deploy:
     runs-on: self-hosted
@@ -87,7 +85,7 @@ jobs:
     steps:
       - name: checkout repo
         uses: actions/checkout@v3
-      - name: docker-compose down
+      - name: docker-compose down app
         run: sudo docker-compose down
       - name: docker-compose
-        run: sudo docker-compose up -d
+        run: sudo docker-compose up -d app
