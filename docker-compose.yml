@@ -4,22 +4,21 @@ services:
   postgres:
     image: postgres:14
     environment:
-      - POSTGRES_DB=${POSTGRES_DB}
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=segmentation
+      - POSTGRES_USER=segmentation
+      - POSTGRES_PASSWORD=segmentation
     ports:
       - "5432:5432"
     networks:
       - app-network
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
   app:
     image: l1zail/segmentation:latest
-    build:
-      context: .
-      dockerfile: Dockerfile
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/${POSTGRES_DB}
-      - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
-      - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/segmentation
+      - SPRING_DATASOURCE_USERNAME=segmentation
+      - SPRING_DATASOURCE_PASSWORD=segmentation
     ports:
       - "8090:8090"
     depends_on:
@@ -27,6 +26,14 @@ services:
     networks:
       - app-network
 
+  front:
+    image: l1zail/segmentation-front:latest
+    ports:
+      - "5173:5173"
+
 networks:
   app-network:
     driver: bridge
+
+volumes:
+  postgres-data:
