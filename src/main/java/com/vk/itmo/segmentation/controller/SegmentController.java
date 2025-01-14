@@ -84,6 +84,9 @@ public class SegmentController {
     @PostMapping("/distribute-random")
     @Operation(summary = "Рандомное распределение пользователей", description = "Рандомное распределение пользователей.")
     public ResponseEntity<DefaultResponse> distributeUsers(@RequestBody @Valid DistributionRequest distributionRequest) {
+        if (segmentService.findByName(distributionRequest.segmentName()).isEmpty()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new DefaultResponse("Сегмент с таким именем не существует"));
+        }
         segmentService.randomDistributeUsersIntoSegments(distributionRequest);
         return ResponseEntity.ok(new DefaultResponse("Распределение пользователей прошло успешно"));
     }

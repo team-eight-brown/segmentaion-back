@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -37,6 +38,10 @@ public class SegmentService {
     public Segment findById(Long segmentId) {
         return segmentRepository.findById(segmentId)
                 .orElseThrow(() -> new NotFoundException("Not found segment with id: " + segmentId));
+    }
+
+    public Optional<Segment> findByName(String segmentName) {
+        return segmentRepository.findByName(segmentName);
     }
 
     // Создание сегмента
@@ -101,14 +106,14 @@ public class SegmentService {
     public Page<SegmentResponse> getUserSegments(Long userId, Pageable pageable) {
         userService.findById(userId);
         return segmentRepository.findByUsersId(userId, pageable)
-                .map(this::mapToSegmentResponse);
+                .map(SegmentService::mapToSegmentResponse);
     }
 
     public Page<SegmentResponse> getAllSegments(Pageable pageable) {
-        return segmentRepository.findAll(pageable).map(this::mapToSegmentResponse);
+        return segmentRepository.findAll(pageable).map(SegmentService::mapToSegmentResponse);
     }
 
-    private SegmentResponse mapToSegmentResponse(Segment segment) {
+    private static SegmentResponse mapToSegmentResponse(Segment segment) {
         return new SegmentResponse(
                 segment.getId().toString(),
                 segment.getName(),
