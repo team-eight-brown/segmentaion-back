@@ -1,5 +1,6 @@
 package com.vk.itmo.segmentation.service;
 
+import com.vk.itmo.segmentation.dto.UserResponse;
 import com.vk.itmo.segmentation.entity.AdminUser;
 import com.vk.itmo.segmentation.entity.User;
 import com.vk.itmo.segmentation.exception.NotFoundException;
@@ -9,6 +10,7 @@ import jakarta.annotation.Nonnull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Service;
 
@@ -76,6 +78,21 @@ public class UserService {
 
     public List<User> saveAll(List<User> users) {
         return userRepository.saveAll(users);
+    }
+
+    @Nonnull
+    public Page<UserResponse> getAllUsers(@Nonnull Pageable pageable) {
+        return userRepository.findAll(pageable).map(UserService::mapToUserResponse);
+    }
+
+    @Nonnull
+    private static UserResponse mapToUserResponse(@Nonnull User user) {
+        return new UserResponse(
+                user.getId(),
+                user.getLogin(),
+                user.getEmail(),
+                user.getIpAddress()
+        );
     }
 
     public long count() {
