@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Service;
 
@@ -81,8 +82,11 @@ public class UserService {
     }
 
     @Nonnull
-    public Page<UserResponse> getAllUsers(@Nonnull Pageable pageable) {
-        return userRepository.findAll(pageable).map(UserService::mapToUserResponse);
+    public Page<UserResponse> getAllUsers(Integer id, String login, String email, @Nonnull Pageable pageable) {
+        Specification<User> spec = Specification.where(UserSpecification.hasId(id))
+                .and(UserSpecification.hasLogin(login))
+                .and(UserSpecification.hasEmail(email));
+        return userRepository.findAll(spec, pageable).map(UserService::mapToUserResponse);
     }
 
     @Nonnull

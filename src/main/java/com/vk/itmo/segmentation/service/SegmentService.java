@@ -15,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -109,8 +110,11 @@ public class SegmentService {
                 .map(SegmentService::mapToSegmentResponse);
     }
 
-    public Page<SegmentResponse> getAllSegments(Pageable pageable) {
-        return segmentRepository.findAll(pageable).map(SegmentService::mapToSegmentResponse);
+    public Page<SegmentResponse> getAllSegments(String name, String description, Long id, Pageable pageable) {
+        Specification<Segment> spec = Specification.where(SegmentSpecification.hasName(name))
+                .and(SegmentSpecification.hasDescription(description))
+                .and(SegmentSpecification.hasId(id));
+        return segmentRepository.findAll(spec, pageable).map(SegmentService::mapToSegmentResponse);
     }
 
     private static SegmentResponse mapToSegmentResponse(Segment segment) {

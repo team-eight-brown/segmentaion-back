@@ -2,12 +2,13 @@ package com.vk.itmo.segmentation.repository;
 
 import com.vk.itmo.segmentation.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
-public interface UserRepository extends JpaRepository<User, Long> {
+public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificationExecutor<User> {
     @Query(value = "SELECT * FROM users WHERE email ~ :pattern", nativeQuery = true)
     List<User> findByEmailPattern(@Param("pattern") String pattern);
 

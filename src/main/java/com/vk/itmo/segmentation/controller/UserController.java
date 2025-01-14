@@ -10,6 +10,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -22,7 +23,11 @@ public class UserController {
 
     @GetMapping("/get-all")
     @Operation(summary = "Получить всех пользователей", description = "Возвращает список всех пользователей.")
-    public Page<UserResponse> getAllUsers(Pageable pageable) {
-        return userService.getAllUsers(pageable);
+    public Page<UserResponse> getAllUsers(
+            @RequestParam(name = "id", required = false) Integer id,
+            @RequestParam(name = "login", required = false) String login,
+            @RequestParam(name = "email", required = false) String email,
+            Pageable pageable) {
+        return userService.getAllUsers(id, login, email, pageable);
     }
 }
