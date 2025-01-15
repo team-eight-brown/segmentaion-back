@@ -33,7 +33,7 @@ public class User {
     @Column(name = "email", nullable = false, unique = true, length = 255)
     private String email;
 
-    @Column(name = "ip_address", columnDefinition = "INET")
+    @Column(name = "ip_address", nullable = false, length = 255)
     private String ipAddress;
 
     @ManyToMany
