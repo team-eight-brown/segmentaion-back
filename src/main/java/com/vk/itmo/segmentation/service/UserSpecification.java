@@ -24,4 +24,9 @@ public class UserSpecification {
                         root.get("id"), id
                 );
     }
+
+    public static Specification<User> hasSegmentName(String segmentName) {
+        return (root, query, criteriaBuilder) -> segmentName == null ? null
+                : criteriaBuilder.equal(root.join("segments").get("name"), segmentName);
+    }
 }

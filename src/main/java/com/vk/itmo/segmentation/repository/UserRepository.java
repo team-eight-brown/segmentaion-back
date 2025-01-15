@@ -21,7 +21,7 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
     List<User> findByIpPattern(@Param("pattern") String pattern);
 
     @Query("SELECT u FROM User u JOIN u.segments s WHERE s.name = :segmentName")
-    Page<User> findAllBySegmentName(@Param("segmentName") String segmentName, Pageable pageable);
+    List<User> findAllBySegmentName(@Param("segmentName") String segmentName);
 
     long count();
 }
