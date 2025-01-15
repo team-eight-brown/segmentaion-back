@@ -28,7 +28,8 @@ public class UserController {
             @RequestParam(name = "login", required = false) String login,
             @RequestParam(name = "email", required = false) String email,
             @RequestParam(name = "segment_name", required = false) String segmentName,
+            @RequestParam(name = "ip_address", required = false) String ipAddress,
             Pageable pageable) {
-        return userService.getAllUsers(id, login, email, segmentName, pageable);
+        return userService.getAllUsers(id, login, email, segmentName, ipAddress, pageable);
     }
 }
