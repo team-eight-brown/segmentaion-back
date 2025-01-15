@@ -32,9 +32,8 @@ public class UserSpecification {
     }
 
     public static Specification<User> hasIpAddress(String ipAddress) {
-        return (root, query, criteriaBuilder) ->
-                ipAddress == null ? null : criteriaBuilder.equal(
-                        root.get("ip_address"), '%' + ipAddress + '%'
-                );
+        return (root, query, criteriaBuilder) -> criteriaBuilder.like(
+                criteriaBuilder.function("CAST", String.class, root.get("ip_address")), '%' + ipAddress + '%'
+        );
     }
 }
