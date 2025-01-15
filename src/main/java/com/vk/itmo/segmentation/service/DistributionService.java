@@ -32,7 +32,7 @@ public class DistributionService {
     private final SegmentService segmentService;
     private final SegmentRepository segmentRepository;
     private final FilterRepository filterRepository;
-    private final ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+    private final ExecutorService executorService = Executors.newFixedThreadPool(10);
 
     public void distributeByFilter(@NonNull FilterDistributeRequest request) {
         var segment = segmentRepository.findById(request.segmentId()).orElseThrow();

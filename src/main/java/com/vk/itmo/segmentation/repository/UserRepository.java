@@ -17,7 +17,7 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
     @Query(value = "SELECT * FROM users WHERE login ~ :pattern", nativeQuery = true)
     List<User> findByLoginPattern(@Param("pattern") String pattern);
 
-    @Query(value = "SELECT * FROM users WHERE ip_address ~ :pattern", nativeQuery = true)
+    @Query(value = "SELECT * FROM users WHERE ip_address::text ~ :pattern", nativeQuery = true)
     List<User> findByIpPattern(@Param("pattern") String pattern);
 
     @Query("SELECT u FROM User u JOIN u.segments s WHERE s.name = :segmentName")
