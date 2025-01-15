@@ -82,20 +82,12 @@ public class UserService {
     }
 
     @Nonnull
-    public Page<UserResponse> getAllUsers(Integer id, String login, String email, @Nonnull Pageable pageable) {
+    public Page<UserResponse> getAllUsers(Integer id, String login, String email, String segmentName, @Nonnull Pageable pageable) {
         Specification<User> spec = Specification.where(UserSpecification.hasId(id))
                 .and(UserSpecification.hasLogin(login))
-                .and(UserSpecification.hasEmail(email));
+                .and(UserSpecification.hasEmail(email))
+                .and(UserSpecification.hasSegmentName(segmentName));
         return userRepository.findAll(spec, pageable).map(UserService::mapToUserResponse);
-    }
-
-    public Page<UserResponse> getAllUsersOfSegment(String segmentName, Pageable pageable) {
-        if (segmentName == null) {
-            return Page.empty(pageable);
-        }
-
-        Page<User> users = userRepository.findAllBySegmentName(segmentName, pageable);
-        return users.map(UserService::mapToUserResponse);
     }
 
     @Nonnull

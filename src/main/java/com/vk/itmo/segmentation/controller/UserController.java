@@ -27,15 +27,8 @@ public class UserController {
             @RequestParam(name = "id", required = false) Integer id,
             @RequestParam(name = "login", required = false) String login,
             @RequestParam(name = "email", required = false) String email,
+            @RequestParam(name = "segment_name", required = false) String segmentName,
             Pageable pageable) {
-        return userService.getAllUsers(id, login, email, pageable);
-    }
-
-    @GetMapping("/get-all-by-segment")
-    @Operation(summary = "Получить всех пользователей сегмента", description = "Возвращает список всех пользователей сегмента.")
-    public Page<UserResponse> getAllUsersOfSegment(
-            @RequestParam(name = "segment-name", required = true) String segmentName,
-            Pageable pageable) {
-        return userService.getAllUsersOfSegment(segmentName, pageable);
+        return userService.getAllUsers(id, login, email, segmentName, pageable);
     }
 }
