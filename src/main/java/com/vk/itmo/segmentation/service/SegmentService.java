@@ -10,31 +10,33 @@ import com.vk.itmo.segmentation.entity.User;
 import com.vk.itmo.segmentation.exception.NotFoundException;
 import com.vk.itmo.segmentation.repository.SegmentRepository;
 import jakarta.transaction.Transactional;
-import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.Future;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class SegmentService {
 
     private final SegmentRepository segmentRepository;
     private final UserService userService;
-    private static final int USER_BATCH_SIZE = 100;
-    private final ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+    private final ExecutorService executor = Executors.newFixedThreadPool(4);
+    private final TransactionTemplate masterTransactionTemplate;
 
     public Segment findById(Long segmentId) {
         return segmentRepository.findById(segmentId)
@@ -48,7 +50,7 @@ public class SegmentService {
     // Создание сегмента
     public SegmentResponse createSegment(SegmentCreateRequest request) {
         if (segmentRepository.existsByName(request.name())) {
-            throw new IllegalArgumentException("Segment with name '" + request.name() + "' already exists.");
+            throw new IllegalArgumentException("Сегмент с именем '" + request.name() + "' уже существует.");
         }
         var segment = new Segment()
                 .setName(request.name())
@@ -67,7 +69,7 @@ public class SegmentService {
     public SegmentResponse updateSegment(Long segmentId, SegmentUpdateRequest updateRequest) {
         var segment = findById(segmentId);
         if (!segment.getName().equals(updateRequest.name()) && segmentRepository.existsByName(updateRequest.name())) {
-            throw new IllegalArgumentException("Segment with name '" + updateRequest.name() + "' already exists.");
+            throw new IllegalArgumentException("Сегмент с именем '" + updateRequest.name() + "' уже существует.");
         }
         if (updateRequest.name() != null) {
             segment.setName(updateRequest.name());
@@ -81,13 +83,17 @@ public class SegmentService {
 
     // Добавление пользователя в сегмент
     public void addUserToSegment(UsersToSegmentRequest request, Long segmentId) {
-        var user = userService.findById(request.userId());
-        var segment = findById(segmentId);
-        if (user.getSegments().contains(segment)) {
-            throw new IllegalStateException("User is already in the segment.");
-        }
-        user.getSegments().add(segment);
-        userService.save(user);
+        masterTransactionTemplate.execute(_ -> {
+            var user = userService.findById(request.userId());
+            var segment = findById(segmentId);
+            if (user.getSegments().contains(segment)) {
+                throw new IllegalStateException("Пользователь уже находится в сегменте.");
+            }
+            log.info("Adding user {} to segment {}", user.getId(), segment.getId());
+            user.getSegments().add(segment);
+            userService.save(user);
+            return null;
+        });
     }
 
     // Удаление пользователя из сегмента
@@ -96,7 +102,7 @@ public class SegmentService {
         var user = userService.findById(request.userId());
         var segment = findById(segmentId);
         if (!user.getSegments().contains(segment)) {
-            throw new IllegalStateException("User is not part of the segment.");
+            throw new IllegalStateException("Пользователь не состоит в сегменте.");
         }
         user.getSegments().remove(segment);
         segment.getUsers().remove(user);
@@ -125,82 +131,46 @@ public class SegmentService {
         );
     }
 
-    @Transactional
     public void randomDistributeUsersIntoSegments(DistributionRequest distributionRequest) {
-        double percentage = distributionRequest.percentage();
+        log.info("Distribution started: {}", distributionRequest);
+        Segment segment = segmentRepository.findByName(distributionRequest.segmentName())
+                .orElseThrow(() -> new RuntimeException("Сегмент не найден"));
 
-        long totalUsers = userService.count();
-        if (totalUsers == 0) {
-            return;
-        }
+        List<User> users = userService.findAll();
 
-        int usersToDistribute = (int) (totalUsers * (percentage / 100));
-        if (usersToDistribute <= 0) {
-            return;
-        }
+        int totalUsers = users.size();
+        int usersToAssign = (int) (totalUsers * (distributionRequest.percentage() / 100));
 
-        AtomicInteger toDistribute = new AtomicInteger(usersToDistribute);
 
-        var segment = getSegmentByName(distributionRequest.segmentName());
+        List<User> randomUsers = getRandomUsers(users, usersToAssign);
+        List<Callable<Void>> tasks = new ArrayList<>(usersToAssign);
+        randomUsers.forEach(user -> tasks.add(() -> {
+            addUserToSegment(new UsersToSegmentRequest(user.getId()), segment.getId());
+            return null;
+        }));
 
-        int totalPages = (int) Math.ceil((double) totalUsers / USER_BATCH_SIZE);
-        List<Callable<Void>> tasks = new ArrayList<>();
-        for (int pageNumber = 0; pageNumber < totalPages; pageNumber++) {
-            int currentPage = pageNumber;
-           tasks.add(() -> {
-               distributeOnePage(currentPage, toDistribute, segment);
-               return null;
-           });
-        }
+        log.info("Total tasks: {}", tasks.size());
         try {
-            executor.invokeAll(tasks);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-    }
+            // Используем invokeAll() для запуска всех задач
+            List<Future<Void>> results = executor.invokeAll(tasks);
 
-    /**
-     * Распределяем пользователей из одной страницы.
-     */
-    @Transactional(Transactional.TxType.REQUIRES_NEW)
-    public void distributeOnePage(int pageNumber,
-                                  AtomicInteger toDistribute,
-                                  Segment segment) {
-        if (toDistribute.get() <= 0) {
-            return;
-        }
-
-        List<User> users = userService.findAll(PageRequest.of(pageNumber, USER_BATCH_SIZE));
-        if (users.isEmpty()) {
-            return;
-        }
-
-        Collections.shuffle(users);
-
-        int currentLimit = toDistribute.get();
-        if (currentLimit <= 0) {
-            return;
-        }
-
-        int toAssign = Math.min(currentLimit, users.size());
-
-        List<User> usersForDistribution = users.subList(0, toAssign);
-
-        for (int i = 0; i < usersForDistribution.size(); i++) {
-            User user = usersForDistribution.get(i);
-            if (!user.getSegments().contains(segment)) {
-                user.getSegments().add(segment);
-                segment.getUsers().add(user);
+            // Ждем завершения всех задач и обрабатываем результаты (если нужно)
+            for (Future<Void> result : results) {
+                try {
+                    result.get(); // Это блокирует до завершения каждой задачи
+                } catch (ExecutionException e) {
+                    log.error("Ошибка при выполнении задачи", e);
+                }
             }
+            log.info("User distribution completed.");
+        } catch (InterruptedException e) {
+            log.error("Execution interrupted", e);
+            Thread.currentThread().interrupt();
         }
-        userService.saveAll(usersForDistribution);
-
-        toDistribute.addAndGet(-toAssign);
     }
 
-    @NonNull
-    private Segment getSegmentByName(@NonNull String name) {
-        return segmentRepository.findByName(name)
-                .orElseThrow(() -> new IllegalArgumentException("Distributed segment are not exists"));
+    private static List<User> getRandomUsers(List<User> users, int count) {
+        Collections.shuffle(users);
+        return users.subList(0, count);
     }
 }

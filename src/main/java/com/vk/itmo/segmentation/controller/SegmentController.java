@@ -79,6 +79,6 @@ public class SegmentController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new DefaultResponse("Сегмент с таким именем не существует"));
         }
         segmentService.randomDistributeUsersIntoSegments(distributionRequest);
-        return ResponseEntity.ok(new DefaultResponse("Распределение пользователей прошло успешно"));
+        return ResponseEntity.ok(new DefaultResponse("Процесс сегментирования пользователей запущен успешно"));
     }
 }

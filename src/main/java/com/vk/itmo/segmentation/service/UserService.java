@@ -28,7 +28,7 @@ public class UserService {
     @Nonnull
     public User findById(@Nonnull Long userId) {
         return userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("Not found user with id: " + userId));
+                .orElseThrow(() -> new NotFoundException("Пользователь с id не был найден: " + userId));
     }
 
     /**
@@ -72,6 +72,10 @@ public class UserService {
     @Nonnull
     public User save(@Nonnull User userEntity) {
         return userRepository.save(userEntity);
+    }
+
+    public List<User> findAll() {
+        return userRepository.findAll();
     }
 
     public List<User> findAll(PageRequest pageRequest) {

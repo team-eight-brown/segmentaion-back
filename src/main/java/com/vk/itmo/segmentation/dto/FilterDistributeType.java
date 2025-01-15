@@ -18,7 +18,7 @@ public enum FilterDistributeType {
                 return type;
             }
         }
-        throw new IllegalArgumentException("Unknown code: " + code);
+        throw new IllegalArgumentException("Неизвестный код: " + code);
     }
 
     @JsonValue

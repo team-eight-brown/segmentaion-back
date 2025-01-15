@@ -7,8 +7,8 @@ spring:
     change-log: classpath:/db/changelog/master.xml
   datasource:
     url: jdbc:postgresql://localhost:5432/segmentation
-    username: segmentation
-    password: segmentation
+    username: postgres
+    password: 1331
     driver-class-name: org.postgresql.Driver
   springdoc:
     api-docs:
