@@ -7,6 +7,7 @@ import com.vk.itmo.segmentation.exception.NotFoundException;
 import com.vk.itmo.segmentation.repository.AdminUserRepository;
 import com.vk.itmo.segmentation.repository.UserRepository;
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -82,11 +83,17 @@ public class UserService {
     }
 
     @Nonnull
-    public Page<UserResponse> getAllUsers(Integer id, String login, String email, String segmentName, @Nonnull Pageable pageable) {
+    public Page<UserResponse> getAllUsers(@Nullable Integer id,
+                                          @Nullable String login,
+                                          @Nullable String email,
+                                          @Nullable String segmentName,
+                                          @Nullable String ipAddress,
+                                          @Nonnull Pageable pageable) {
         Specification<User> spec = Specification.where(UserSpecification.hasId(id))
                 .and(UserSpecification.hasLogin(login))
                 .and(UserSpecification.hasEmail(email))
-                .and(UserSpecification.hasSegmentName(segmentName));
+                .and(UserSpecification.hasSegmentName(segmentName))
+                .and(UserSpecification.hasIpAddress(ipAddress));
         return userRepository.findAll(spec, pageable).map(UserService::mapToUserResponse);
     }
 
