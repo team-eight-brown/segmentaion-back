@@ -1,10 +1,13 @@
 package com.vk.itmo.segmentation.service;
 
+import com.vk.itmo.segmentation.dto.AnalystResponse;
 import com.vk.itmo.segmentation.dto.UserResponse;
 import com.vk.itmo.segmentation.entity.AdminUser;
+import com.vk.itmo.segmentation.entity.Role;
 import com.vk.itmo.segmentation.entity.User;
 import com.vk.itmo.segmentation.exception.NotFoundException;
 import com.vk.itmo.segmentation.repository.AdminUserRepository;
+import com.vk.itmo.segmentation.repository.RoleRepository;
 import com.vk.itmo.segmentation.repository.UserRepository;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
@@ -13,10 +16,14 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+
+import static java.util.stream.Collectors.toSet;
 
 
 @Service
@@ -24,6 +31,8 @@ import java.util.List;
 public class UserService {
     private final UserRepository userRepository;
     private final AdminUserRepository adminUserRepository;
+    private final RoleRepository roleRepository;
+    private static final String ADMIN_ROLE = "Admin";
 
     @Nonnull
     public User findById(@Nonnull Long userId) {
@@ -113,5 +122,40 @@ public class UserService {
 
     public long count() {
         return userRepository.count();
+    }
+
+    public AnalystResponse getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        AdminUser currentUser = (AdminUser) authentication.getPrincipal();
+        return new AnalystResponse(
+                currentUser.getId(),
+                currentUser.getUsername(),
+                currentUser.getEmail(),
+                currentUser.getRoles().stream().map(Role::getName).collect(toSet())
+        );
+    }
+
+    public boolean isCurrentUserAdmin() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        AdminUser currentUser = (AdminUser) authentication.getPrincipal();
+        return currentUser.getRoles().stream().anyMatch(role -> role.getName().equals(ADMIN_ROLE));
+    }
+
+    public void setRole(long roleId, long userId) {
+        var user = adminUserRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
+        var role = roleRepository.findById(roleId)
+                        .orElseThrow(() -> new RuntimeException("Роль не найдена"));
+        user.getRoles().add(role);
+        adminUserRepository.save(user);
+    }
+
+    public void removeRole(long roleId, long userId) {
+        var user = adminUserRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
+        var role = roleRepository.findById(roleId)
+                .orElseThrow(() -> new RuntimeException("Роль не найдена"));
+        user.getRoles().remove(role);
+        adminUserRepository.save(user);
     }
 }
