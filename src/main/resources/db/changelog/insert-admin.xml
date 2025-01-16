@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
+
+    <changeSet id="9" author="jakobiannn">
+        <addDefaultValue
+                tableName="admin_user_roles"
+                columnName="created_at"
+                columnDataType="TIMESTAMP"
+                defaultValueComputed="CURRENT_TIMESTAMP"/>
+    </changeSet>
+    <changeSet id="10" author="jakobiannn">
+        <sql>
+            DELETE FROM admin_users WHERE id = 1;
+            DELETE FROM admin_user_roles WHERE admin_user_id = 1 AND role_id = 1;
+        </sql>
+        <insert tableName="admin_users">
+            <column name="id" value="1"/>
+            <column name="username" value="admin"/>
+            <column name="email" value="admin@admin.admin"/>
+            <column name="password_hash" value="$2a$10$lnTy04qX1cDxpvR9tFqlkuaUkIqTPfhkFylG9TI.yYNG0Mv2JrDQy"/>
+            <column name="created_at" value="2024-11-28 08:12:01.386473"/>
+        </insert>
+        <insert tableName="admin_user_roles">
+            <column name="admin_user_id" value="1"/>
+            <column name="role_id" value="1"/>
+            <column name="created_at" value="2024-11-28 08:12:01.386473"/>
+        </insert>
+    </changeSet>
+</databaseChangeLog>

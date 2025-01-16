@@ -11,6 +11,7 @@ import com.vk.itmo.segmentation.repository.RoleRepository;
 import com.vk.itmo.segmentation.repository.UserRepository;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import jakarta.transaction.Transaction;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -20,6 +21,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.List;
 
@@ -33,6 +35,7 @@ public class UserService {
     private final AdminUserRepository adminUserRepository;
     private final RoleRepository roleRepository;
     private static final String ADMIN_ROLE = "Admin";
+    private final TransactionTemplate transactionTemplate;
 
     @Nonnull
     public User findById(@Nonnull Long userId) {
@@ -125,14 +128,19 @@ public class UserService {
     }
 
     public AnalystResponse getCurrentUser() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        AdminUser currentUser = (AdminUser) authentication.getPrincipal();
-        return new AnalystResponse(
-                currentUser.getId(),
-                currentUser.getUsername(),
-                currentUser.getEmail(),
-                currentUser.getRoles().stream().map(Role::getName).collect(toSet())
-        );
+        return transactionTemplate.execute(_ -> {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            AdminUser currentUser = (AdminUser) authentication.getPrincipal();
+            AdminUser fullUser = adminUserRepository.findById(currentUser.getId())
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+            return new AnalystResponse(
+                    fullUser.getId(),
+                    fullUser.getUsername(),
+                    fullUser.getEmail(),
+                    fullUser.getRoles().stream().map(Role::getName).collect(toSet())
+            );
+        });
+
     }
 
     public boolean isCurrentUserAdmin() {
