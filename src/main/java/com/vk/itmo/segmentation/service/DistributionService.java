@@ -6,6 +6,7 @@ import com.vk.itmo.segmentation.dto.UsersToSegmentRequest;
 import com.vk.itmo.segmentation.entity.Filter;
 import com.vk.itmo.segmentation.entity.User;
 import com.vk.itmo.segmentation.entity.enums.FilterType;
+import com.vk.itmo.segmentation.exception.ForbiddenException;
 import com.vk.itmo.segmentation.repository.FilterRepository;
 import com.vk.itmo.segmentation.repository.SegmentRepository;
 import com.vk.itmo.segmentation.repository.UserRepository;
@@ -30,11 +31,15 @@ import static com.vk.itmo.segmentation.entity.enums.FilterType.LOGIN_REGEXP;
 public class DistributionService {
     private final UserRepository userRepository;
     private final SegmentService segmentService;
+    private final UserService userService;
     private final SegmentRepository segmentRepository;
     private final FilterRepository filterRepository;
     private final ExecutorService executorService = Executors.newFixedThreadPool(10);
 
     public void distributeByFilter(@NonNull FilterDistributeRequest request) {
+        if (!userService.isCurrentUserAdmin()) {
+            throw new ForbiddenException("Текущий пользователь не является администратором");
+        }
         var segment = segmentRepository.findById(request.segmentId()).orElseThrow();
         var filter = Filter.builder()
                 .filterType(getFilterType(request.type()))

@@ -49,6 +49,13 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return buildErrorResponse(exception, HttpStatus.NOT_FOUND);
     }
 
+    @ExceptionHandler(ForbiddenException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    public ResponseEntity<Object> handleForbiddenException(final Exception exception) {
+        logger.warn(exception.getMessage(), exception);
+        return buildErrorResponse(exception, HttpStatus.FORBIDDEN);
+    }
+
 
     private ResponseEntity<Object> buildErrorResponse(
             final Exception exception,

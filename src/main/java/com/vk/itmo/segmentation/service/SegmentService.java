@@ -1,12 +1,9 @@
 package com.vk.itmo.segmentation.service;
 
-import com.vk.itmo.segmentation.dto.DistributionRequest;
-import com.vk.itmo.segmentation.dto.SegmentCreateRequest;
-import com.vk.itmo.segmentation.dto.SegmentResponse;
-import com.vk.itmo.segmentation.dto.SegmentUpdateRequest;
-import com.vk.itmo.segmentation.dto.UsersToSegmentRequest;
+import com.vk.itmo.segmentation.dto.*;
 import com.vk.itmo.segmentation.entity.Segment;
 import com.vk.itmo.segmentation.entity.User;
+import com.vk.itmo.segmentation.exception.ForbiddenException;
 import com.vk.itmo.segmentation.exception.NotFoundException;
 import com.vk.itmo.segmentation.repository.SegmentRepository;
 import jakarta.transaction.Transactional;
@@ -22,11 +19,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
+import java.util.concurrent.*;
 
 @Slf4j
 @Service
@@ -49,6 +42,9 @@ public class SegmentService {
 
     // Создание сегмента
     public SegmentResponse createSegment(SegmentCreateRequest request) {
+        if (!userService.isCurrentUserAdmin()) {
+            throw new ForbiddenException("Текущий пользователь не является администратором");
+        }
         if (segmentRepository.existsByName(request.name())) {
             throw new IllegalArgumentException("Сегмент с именем '" + request.name() + "' уже существует.");
         }
@@ -61,12 +57,18 @@ public class SegmentService {
 
     // Удаление сегмента
     public void deleteSegment(Long segmentId) {
+        if (!userService.isCurrentUserAdmin()) {
+            throw new ForbiddenException("Текущий пользователь не является администратором");
+        }
         var segment = findById(segmentId);
         segmentRepository.delete(segment);
     }
 
     // Редактирование сегмента
     public SegmentResponse updateSegment(Long segmentId, SegmentUpdateRequest updateRequest) {
+        if (!userService.isCurrentUserAdmin()) {
+            throw new ForbiddenException("Текущий пользователь не является администратором");
+        }
         var segment = findById(segmentId);
         if (!segment.getName().equals(updateRequest.name()) && segmentRepository.existsByName(updateRequest.name())) {
             throw new IllegalArgumentException("Сегмент с именем '" + updateRequest.name() + "' уже существует.");
@@ -83,6 +85,9 @@ public class SegmentService {
 
     // Добавление пользователя в сегмент
     public void addUserToSegment(UsersToSegmentRequest request, Long segmentId) {
+        if (!userService.isCurrentUserAdmin()) {
+            throw new ForbiddenException("Текущий пользователь не является администратором");
+        }
         masterTransactionTemplate.execute(_ -> {
             var user = userService.findById(request.userId());
             var segment = findById(segmentId);
@@ -99,6 +104,9 @@ public class SegmentService {
     // Удаление пользователя из сегмента
     @Transactional
     public void removeUserFromSegment(UsersToSegmentRequest request, Long segmentId) {
+        if (!userService.isCurrentUserAdmin()) {
+            throw new ForbiddenException("Текущий пользователь не является администратором");
+        }
         var user = userService.findById(request.userId());
         var segment = findById(segmentId);
         if (!user.getSegments().contains(segment)) {
@@ -132,6 +140,9 @@ public class SegmentService {
     }
 
     public void randomDistributeUsersIntoSegments(DistributionRequest distributionRequest) {
+        if (!userService.isCurrentUserAdmin()) {
+            throw new ForbiddenException("Текущий пользователь не является администратором");
+        }
         log.info("Distribution started: {}", distributionRequest);
         Segment segment = segmentRepository.findByName(distributionRequest.segmentName())
                 .orElseThrow(() -> new RuntimeException("Сегмент не найден"));
