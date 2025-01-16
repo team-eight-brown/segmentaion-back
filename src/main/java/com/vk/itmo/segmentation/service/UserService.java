@@ -146,7 +146,11 @@ public class UserService {
     public boolean isCurrentUserAdmin() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         AdminUser currentUser = (AdminUser) authentication.getPrincipal();
-        return currentUser.getRoles().stream().anyMatch(role -> role.getName().equals(ADMIN_ROLE));
+        return Boolean.TRUE.equals(transactionTemplate.execute(_ -> {
+            AdminUser fullUser = adminUserRepository.findById(currentUser.getId())
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+            return fullUser.getRoles().stream().anyMatch(role -> role.getName().equals(ADMIN_ROLE));
+        }));
     }
 
     public void setRole(long roleId, long userId) {
