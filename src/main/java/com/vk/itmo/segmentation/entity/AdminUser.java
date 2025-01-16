@@ -11,6 +11,7 @@ import jakarta.persistence.ManyToMany;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 import org.springframework.security.core.GrantedAuthority;
@@ -24,6 +25,7 @@ import java.util.Set;
 @Entity
 @Table(name = "admin_users")
 @Builder
+@Getter
 @AllArgsConstructor
 @NoArgsConstructor
 public class AdminUser implements UserDetails {
