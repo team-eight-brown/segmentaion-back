@@ -8,5 +8,6 @@
     <include file="classpath:/db/changelog/init-changelog.xml"/>
     <include file="classpath:/db/changelog/insert-roles.xml"/>
     <include file="classpath:/db/changelog/alter-user.xml"/>
+    <include file="classpath:/db/changelog/insert-admin.xml"/>
 
 </databaseChangeLog>
