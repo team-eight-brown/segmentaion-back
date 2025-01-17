@@ -11,7 +11,6 @@ import com.vk.itmo.segmentation.repository.RoleRepository;
 import com.vk.itmo.segmentation.repository.UserRepository;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import jakarta.transaction.Transaction;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -144,13 +143,7 @@ public class UserService {
     }
 
     public boolean isCurrentUserAdmin() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        AdminUser currentUser = (AdminUser) authentication.getPrincipal();
-        return Boolean.TRUE.equals(transactionTemplate.execute(_ -> {
-            AdminUser fullUser = adminUserRepository.findById(currentUser.getId())
-                    .orElseThrow(() -> new RuntimeException("User not found"));
-            return fullUser.getRoles().stream().anyMatch(role -> role.getName().equals(ADMIN_ROLE));
-        }));
+        return getCurrentUser().roles().contains("Admin");
     }
 
     public void setRole(long roleId, long userId) {
@@ -170,4 +163,9 @@ public class UserService {
         user.getRoles().remove(role);
         adminUserRepository.save(user);
     }
+
+    public List<User> getRandomLimitUsers(int limit){
+        return userRepository.findRandomLimitUsers(limit);
+    }
+
 }

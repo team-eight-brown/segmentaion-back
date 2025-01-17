@@ -47,7 +47,7 @@ public class SegmentController {
     @PostMapping("/{segmentId}/users")
     @Operation(summary = "Добавить пользователя в сегмент", description = "Добавляет пользователя в указанный сегмент.")
     public void addUserToSegment(@PathVariable Long segmentId, @RequestBody @Valid UsersToSegmentRequest dto) {
-        segmentService.addUserToSegment(dto, segmentId);
+        segmentService.addUserToSegmentWithCheck(dto, segmentId);
     }
 
     @DeleteMapping("/{segmentId}/users")

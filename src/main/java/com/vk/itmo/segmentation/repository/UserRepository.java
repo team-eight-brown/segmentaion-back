@@ -23,5 +23,8 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
     @Query("SELECT u FROM User u JOIN u.segments s WHERE s.name = :segmentName")
     List<User> findAllBySegmentName(@Param("segmentName") String segmentName);
 
+    @Query("SELECT u FROM User u ORDER BY RANDOM() LIMIT :limit")
+    List<User> findRandomLimitUsers(@Param("limit") int limit);
+
     long count();
 }

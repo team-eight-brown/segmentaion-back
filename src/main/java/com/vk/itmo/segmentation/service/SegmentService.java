@@ -12,6 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -83,11 +84,15 @@ public class SegmentService {
         return mapToSegmentResponse(segment);
     }
 
-    // Добавление пользователя в сегмент
-    public void addUserToSegment(UsersToSegmentRequest request, Long segmentId) {
+    public void addUserToSegmentWithCheck(UsersToSegmentRequest request, Long segmentId){
         if (!userService.isCurrentUserAdmin()) {
             throw new ForbiddenException("Текущий пользователь не является администратором");
         }
+        addUserToSegment(request, segmentId);
+    }
+
+    // Добавление пользователя в сегмент
+    public void addUserToSegment(UsersToSegmentRequest request, Long segmentId) {
         masterTransactionTemplate.execute(_ -> {
             var user = userService.findById(request.userId());
             var segment = findById(segmentId);
@@ -139,6 +144,7 @@ public class SegmentService {
         );
     }
 
+    @Async
     public void randomDistributeUsersIntoSegments(DistributionRequest distributionRequest) {
         if (!userService.isCurrentUserAdmin()) {
             throw new ForbiddenException("Текущий пользователь не является администратором");
@@ -147,13 +153,11 @@ public class SegmentService {
         Segment segment = segmentRepository.findByName(distributionRequest.segmentName())
                 .orElseThrow(() -> new RuntimeException("Сегмент не найден"));
 
-        List<User> users = userService.findAll();
-
-        int totalUsers = users.size();
+        long totalUsers = userService.count();
         int usersToAssign = (int) (totalUsers * (distributionRequest.percentage() / 100));
 
+        List<User> randomUsers = userService.getRandomLimitUsers(usersToAssign);
 
-        List<User> randomUsers = getRandomUsers(users, usersToAssign);
         List<Callable<Void>> tasks = new ArrayList<>(usersToAssign);
         randomUsers.forEach(user -> tasks.add(() -> {
             addUserToSegment(new UsersToSegmentRequest(user.getId()), segment.getId());
@@ -178,10 +182,5 @@ public class SegmentService {
             log.error("Execution interrupted", e);
             Thread.currentThread().interrupt();
         }
-    }
-
-    private static List<User> getRandomUsers(List<User> users, int count) {
-        Collections.shuffle(users);
-        return users.subList(0, count);
     }
 }
