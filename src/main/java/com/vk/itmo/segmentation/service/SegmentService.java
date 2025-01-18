@@ -29,8 +29,8 @@ public class SegmentService {
 
     private final SegmentRepository segmentRepository;
     private final UserService userService;
-    private final ExecutorService executor = Executors.newFixedThreadPool(4);
     private final TransactionTemplate masterTransactionTemplate;
+    private final ExecutorService executorService = Executors.newFixedThreadPool(10);
 
     public Segment findById(Long segmentId) {
         return segmentRepository.findById(segmentId)
@@ -144,43 +144,37 @@ public class SegmentService {
         );
     }
 
+    public Segment findSegmentByName(String name){
+        return findByName(name)
+                .orElseThrow(() -> new RuntimeException("Сегмент не найден"));
+    }
+
     @Async
     public void randomDistributeUsersIntoSegments(DistributionRequest distributionRequest) {
-        if (!userService.isCurrentUserAdmin()) {
-            throw new ForbiddenException("Текущий пользователь не является администратором");
-        }
-        log.info("Distribution started: {}", distributionRequest);
-        Segment segment = segmentRepository.findByName(distributionRequest.segmentName())
-                .orElseThrow(() -> new RuntimeException("Сегмент не найден"));
+        Segment segment = findSegmentByName(distributionRequest.segmentName());
 
+        log.info("Distribution started, percentage: {}, segmentName: {}", distributionRequest.percentage(), segment.getName());
         long totalUsers = userService.count();
         int usersToAssign = (int) (totalUsers * (distributionRequest.percentage() / 100));
 
         List<User> randomUsers = userService.getRandomLimitUsers(usersToAssign);
 
-        List<Callable<Void>> tasks = new ArrayList<>(usersToAssign);
+        long timeS = System.currentTimeMillis();
+
+        List<Callable<Void>> tasks = new ArrayList<>();
+
         randomUsers.forEach(user -> tasks.add(() -> {
             addUserToSegment(new UsersToSegmentRequest(user.getId()), segment.getId());
             return null;
         }));
 
-        log.info("Total tasks: {}", tasks.size());
         try {
-            // Используем invokeAll() для запуска всех задач
-            List<Future<Void>> results = executor.invokeAll(tasks);
-
-            // Ждем завершения всех задач и обрабатываем результаты (если нужно)
-            for (Future<Void> result : results) {
-                try {
-                    result.get(); // Это блокирует до завершения каждой задачи
-                } catch (ExecutionException e) {
-                    log.error("Ошибка при выполнении задачи", e);
-                }
-            }
-            log.info("User distribution completed.");
+            executorService.invokeAll(tasks);
         } catch (InterruptedException e) {
-            log.error("Execution interrupted", e);
-            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
         }
+
+        long timeE = System.currentTimeMillis() - timeS;
+        log.info("User distribution completed in {}", timeE);
     }
 }

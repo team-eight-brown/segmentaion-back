@@ -13,6 +13,7 @@ import com.vk.itmo.segmentation.repository.UserRepository;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -31,16 +32,12 @@ import static com.vk.itmo.segmentation.entity.enums.FilterType.LOGIN_REGEXP;
 public class DistributionService {
     private final UserRepository userRepository;
     private final SegmentService segmentService;
-    private final UserService userService;
-    private final SegmentRepository segmentRepository;
     private final FilterRepository filterRepository;
     private final ExecutorService executorService = Executors.newFixedThreadPool(10);
 
+    @Async
     public void distributeByFilter(@NonNull FilterDistributeRequest request) {
-        if (!userService.isCurrentUserAdmin()) {
-            throw new ForbiddenException("Текущий пользователь не является администратором");
-        }
-        var segment = segmentRepository.findById(request.segmentId()).orElseThrow();
+        var segment = segmentService.findById(request.segmentId());
         var filter = Filter.builder()
                 .filterType(getFilterType(request.type()))
                 .segment(segment)
@@ -54,7 +51,8 @@ public class DistributionService {
             case EMAIL_REGEXP -> userRepository.findByEmailPattern(request.regexp());
             case IP_REGEXP -> userRepository.findByIpPattern(request.regexp());
         };
-        log.info("Distribute segments: {}", users);
+        log.info("Distribute segments: {}", users.size());
+        long timeS = System.currentTimeMillis();
 
         List<Callable<Void>> tasks = new ArrayList<>();
 
@@ -67,6 +65,8 @@ public class DistributionService {
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
+        long timeE = System.currentTimeMillis() - timeS;
+        log.info("User distribution completed in {}", timeE);
     }
 
     private FilterType getFilterType(FilterDistributeType type) {

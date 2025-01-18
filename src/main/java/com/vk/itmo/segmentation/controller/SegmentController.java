@@ -1,7 +1,9 @@
 package com.vk.itmo.segmentation.controller;
 
 import com.vk.itmo.segmentation.dto.*;
+import com.vk.itmo.segmentation.exception.ForbiddenException;
 import com.vk.itmo.segmentation.service.SegmentService;
+import com.vk.itmo.segmentation.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -21,6 +23,7 @@ import org.springframework.web.bind.annotation.*;
 public class SegmentController {
 
     private final SegmentService segmentService;
+    private final UserService userService;
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
@@ -78,6 +81,10 @@ public class SegmentController {
         if (segmentService.findByName(distributionRequest.segmentName()).isEmpty()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new DefaultResponse("Сегмент с таким именем не существует"));
         }
+        if (!userService.isCurrentUserAdmin()) {
+            throw new ForbiddenException("Текущий пользователь не является администратором");
+        }
+
         segmentService.randomDistributeUsersIntoSegments(distributionRequest);
         return ResponseEntity.ok(new DefaultResponse("Процесс сегментирования пользователей запущен успешно"));
     }
